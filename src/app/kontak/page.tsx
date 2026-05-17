@@ -1,6 +1,4 @@
 import { MapPin, Phone, Mail, Clock, ArrowRight, Car } from "lucide-react";
-import { dealerInfo } from "@/data/dealer";
-import { cars } from "@/data/cars";
 import Link from "next/link";
 import ContactForm from "@/components/sections/ContactForm";
 
@@ -9,8 +7,71 @@ export const metadata = {
   description: "Hubungi dealer resmi Wuling Semarang atau booking test drive sekarang.",
 };
 
-export default function KontakPage() {
-  const carOptions = cars.map((car) => car.name);
+// ============================================================
+// Types
+// ============================================================
+interface DealerHours {
+  weekday: string;
+  saturday: string;
+  sunday: string;
+}
+
+interface Dealer {
+  name: string;
+  address: string;
+  city: string;
+  phone: string;
+  whatsapp: string;
+  email: string;
+  lat: number;
+  lng: number;
+  hours: DealerHours | null;
+}
+
+interface CarOption {
+  name: string;
+}
+
+// ============================================================
+// Data fetching
+// ============================================================
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+
+async function getDealer(): Promise<Dealer | null> {
+  const res = await fetch(`${BASE_URL}/api/dealer`, {
+    next: { revalidate: 86400 },
+  });
+  if (!res.ok) return null;
+  const json = await res.json();
+  return json.data as Dealer;
+}
+
+async function getCarOptions(): Promise<string[]> {
+  const res = await fetch(`${BASE_URL}/api/cars`, {
+    next: { revalidate: 3600 },
+  });
+  if (!res.ok) return [];
+  const json = await res.json();
+  return (json.data as CarOption[]).map((c) => c.name);
+}
+
+// ============================================================
+// Page
+// ============================================================
+export default async function KontakPage() {
+  const [dealer, carOptions] = await Promise.all([
+    getDealer(),
+    getCarOptions(),
+  ]);
+
+  const whatsapp = dealer?.whatsapp ?? "628133399568";
+  const phone    = dealer?.phone    ?? "";
+  const email    = dealer?.email    ?? "";
+  const address  = dealer ? `${dealer.address}, ${dealer.city}` : "";
+  const hours    = dealer?.hours;
+  const mapsUrl  = dealer
+    ? `https://www.google.com/maps/search/?api=1&query=${dealer.lat},${dealer.lng}`
+    : "#";
 
   return (
     <div>
@@ -42,7 +103,7 @@ export default function KontakPage() {
               <p className="text-sm text-wuling-gray-mid mb-6">
                 Isi form di bawah dan tim kami akan menghubungi Anda dalam 1x24 jam.
               </p>
-              <ContactForm carOptions={carOptions} whatsapp={dealerInfo.whatsapp} />
+              <ContactForm carOptions={carOptions} whatsapp={whatsapp} />
             </div>
           </div>
 
@@ -54,7 +115,7 @@ export default function KontakPage() {
 
             {/* WhatsApp */}
             <a
-              href={`https://wa.me/${dealerInfo.whatsapp}?text=Halo, saya ingin bertanya tentang Wuling`}
+              href={`https://wa.me/${whatsapp}?text=Halo, saya ingin bertanya tentang Wuling`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex gap-4 items-center bg-green-50 border border-green-100 rounded-xl p-4 hover:bg-green-100 transition-colors group"
@@ -67,7 +128,7 @@ export default function KontakPage() {
               </div>
               <div>
                 <p className="text-xs text-green-700 font-medium uppercase tracking-widest mb-0.5">WhatsApp</p>
-                <p className="font-semibold text-wuling-black">{dealerInfo.whatsapp}</p>
+                <p className="font-semibold text-wuling-black">{whatsapp}</p>
                 <p className="text-xs text-green-700 mt-0.5 flex items-center gap-1 group-hover:gap-2 transition-all">
                   Chat sekarang <ArrowRight size={11} />
                 </p>
@@ -75,75 +136,83 @@ export default function KontakPage() {
             </a>
 
             {/* Telepon */}
-            <a
-              href={`tel:${dealerInfo.phone}`}
-              className="flex gap-4 items-center bg-white border border-gray-100 rounded-xl p-4 hover:border-wuling-red transition-colors shadow-sm"
-            >
-              <div className="w-10 h-10 bg-wuling-gray rounded-lg flex items-center justify-center shrink-0">
-                <Phone size={18} className="text-wuling-red" />
-              </div>
-              <div>
-                <p className="text-xs text-wuling-gray-mid uppercase tracking-widest mb-0.5">Telepon</p>
-                <p className="font-semibold text-wuling-black">{dealerInfo.phone}</p>
-              </div>
-            </a>
+            {phone && (
+              <a
+                href={`tel:${phone}`}
+                className="flex gap-4 items-center bg-white border border-gray-100 rounded-xl p-4 hover:border-wuling-red transition-colors shadow-sm"
+              >
+                <div className="w-10 h-10 bg-wuling-gray rounded-lg flex items-center justify-center shrink-0">
+                  <Phone size={18} className="text-wuling-red" />
+                </div>
+                <div>
+                  <p className="text-xs text-wuling-gray-mid uppercase tracking-widest mb-0.5">Telepon</p>
+                  <p className="font-semibold text-wuling-black">{phone}</p>
+                </div>
+              </a>
+            )}
 
             {/* Email */}
-            <a
-              href={`mailto:${dealerInfo.email}`}
-              className="flex gap-4 items-center bg-white border border-gray-100 rounded-xl p-4 hover:border-wuling-red transition-colors shadow-sm"
-            >
-              <div className="w-10 h-10 bg-wuling-gray rounded-lg flex items-center justify-center shrink-0">
-                <Mail size={18} className="text-wuling-red" />
-              </div>
-              <div>
-                <p className="text-xs text-wuling-gray-mid uppercase tracking-widest mb-0.5">Email</p>
-                <p className="font-semibold text-wuling-black">{dealerInfo.email}</p>
-              </div>
-            </a>
+            {email && (
+              <a
+                href={`mailto:${email}`}
+                className="flex gap-4 items-center bg-white border border-gray-100 rounded-xl p-4 hover:border-wuling-red transition-colors shadow-sm"
+              >
+                <div className="w-10 h-10 bg-wuling-gray rounded-lg flex items-center justify-center shrink-0">
+                  <Mail size={18} className="text-wuling-red" />
+                </div>
+                <div>
+                  <p className="text-xs text-wuling-gray-mid uppercase tracking-widest mb-0.5">Email</p>
+                  <p className="font-semibold text-wuling-black">{email}</p>
+                </div>
+              </a>
+            )}
 
             {/* Jam Operasional */}
-            <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
-              <div className="flex gap-3 items-center mb-3">
-                <div className="w-10 h-10 bg-wuling-gray rounded-lg flex items-center justify-center shrink-0">
-                  <Clock size={18} className="text-wuling-red" />
-                </div>
-                <p className="text-xs text-wuling-gray-mid uppercase tracking-widest">Jam Operasional</p>
-              </div>
-              <div className="space-y-2 pl-1">
-                {[
-                  { day: "Senin – Jumat", hours: dealerInfo.hours.weekday },
-                  { day: "Sabtu", hours: dealerInfo.hours.saturday },
-                  { day: "Minggu", hours: dealerInfo.hours.sunday },
-                ].map((item) => (
-                  <div key={item.day} className="flex justify-between text-sm">
-                    <span className="text-wuling-gray-mid">{item.day}</span>
-                    <span className={`font-medium ${item.hours === "Tutup" ? "text-red-500" : "text-wuling-black"}`}>
-                      {item.hours}
-                    </span>
+            {hours && (
+              <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+                <div className="flex gap-3 items-center mb-3">
+                  <div className="w-10 h-10 bg-wuling-gray rounded-lg flex items-center justify-center shrink-0">
+                    <Clock size={18} className="text-wuling-red" />
                   </div>
-                ))}
+                  <p className="text-xs text-wuling-gray-mid uppercase tracking-widest">Jam Operasional</p>
+                </div>
+                <div className="space-y-2 pl-1">
+                  {[
+                    { day: "Senin – Jumat", value: hours.weekday },
+                    { day: "Sabtu",         value: hours.saturday },
+                    { day: "Minggu",        value: hours.sunday },
+                  ].map((item) => (
+                    <div key={item.day} className="flex justify-between text-sm">
+                      <span className="text-wuling-gray-mid">{item.day}</span>
+                      <span className={`font-medium ${item.value === "Tutup" ? "text-red-500" : "text-wuling-black"}`}>
+                        {item.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Alamat */}
-            <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
-              <div className="flex gap-3 items-center mb-2">
-                <div className="w-10 h-10 bg-wuling-gray rounded-lg flex items-center justify-center shrink-0">
-                  <MapPin size={18} className="text-wuling-red" />
+            {address && (
+              <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+                <div className="flex gap-3 items-center mb-2">
+                  <div className="w-10 h-10 bg-wuling-gray rounded-lg flex items-center justify-center shrink-0">
+                    <MapPin size={18} className="text-wuling-red" />
+                  </div>
+                  <p className="text-xs text-wuling-gray-mid uppercase tracking-widest">Lokasi</p>
                 </div>
-                <p className="text-xs text-wuling-gray-mid uppercase tracking-widest">Lokasi</p>
+                <p className="text-sm text-wuling-black pl-1">{address}</p>
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-wuling-red hover:underline mt-2 pl-1"
+                >
+                  Lihat di Google Maps <ArrowRight size={11} />
+                </a>
               </div>
-              <p className="text-sm text-wuling-black pl-1">{dealerInfo.address}, {dealerInfo.city}</p>
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${dealerInfo.coordinates.lat},${dealerInfo.coordinates.lng}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-wuling-red hover:underline mt-2 pl-1"
-              >
-                Lihat di Google Maps <ArrowRight size={11} />
-              </a>
-            </div>
+            )}
 
             {/* Link ke katalog */}
             <div className="bg-wuling-gray rounded-xl p-4">

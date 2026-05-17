@@ -1,7 +1,41 @@
 import { MapPin, Phone, Mail, Clock, Car, Wrench, ShieldCheck, ArrowRight } from "lucide-react";
-import { dealerInfo } from "@/data/dealer";
 import Link from "next/link";
 import CarImage from "@/components/ui/CarImage";
+
+// ============================================================
+// Types
+// ============================================================
+interface DealerHours {
+  weekday: string;
+  saturday: string;
+  sunday: string;
+}
+
+interface Dealer {
+  name: string;
+  address: string;
+  city: string;
+  phone: string;
+  whatsapp: string;
+  email: string;
+  lat: number;
+  lng: number;
+  hours: DealerHours | null;
+}
+
+// ============================================================
+// Data fetching
+// ============================================================
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+
+async function getDealer(): Promise<Dealer | null> {
+  const res = await fetch(`${BASE_URL}/api/dealer`, {
+    next: { revalidate: 86400 },
+  });
+  if (!res.ok) return null;
+  const json = await res.json();
+  return json.data as Dealer;
+}
 
 export const metadata = {
   title: "Info Dealer — Wuling Semarang",
@@ -45,7 +79,23 @@ const faqs = [
   },
 ];
 
-export default function DealerPage() {
+export default async function DealerPage() {
+  const dealer = await getDealer();
+
+  // Fallback ke nilai default jika fetch gagal
+  const name     = dealer?.name     ?? "Wuling Motors Semarang";
+  const address  = dealer?.address  ?? "";
+  const city     = dealer?.city     ?? "";
+  const phone    = dealer?.phone    ?? "";
+  const whatsapp = dealer?.whatsapp ?? "628133399568";
+  const email    = dealer?.email    ?? "";
+  const lat      = dealer?.lat      ?? -6.9667;
+  const lng      = dealer?.lng      ?? 110.4167;
+  const hours    = dealer?.hours    ?? { weekday: "-", saturday: "-", sunday: "-" };
+
+  const mapsUrl  = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+  const embedUrl = `https://maps.google.com/maps?q=${lat},${lng}&z=16&output=embed`;
+
   return (
     <div>
       {/* ===== HEADER ===== */}
@@ -55,7 +105,7 @@ export default function DealerPage() {
             Dealer Resmi
           </p>
           <h1 className="font-display text-4xl md:text-5xl font-bold">
-            {dealerInfo.name}
+            {name}
           </h1>
           <p className="text-gray-400 mt-3 text-lg max-w-xl">
             Melayani kebutuhan otomotif Anda dengan sepenuh hati di Semarang dan sekitarnya.
@@ -80,10 +130,10 @@ export default function DealerPage() {
               </div>
               <div>
                 <p className="text-xs text-wuling-gray-mid uppercase tracking-widest mb-1">Alamat</p>
-                <p className="font-medium text-wuling-black">{dealerInfo.address}</p>
-                <p className="text-sm text-wuling-gray-mid">{dealerInfo.city}</p>
+                <p className="font-medium text-wuling-black">{address}</p>
+                <p className="text-sm text-wuling-gray-mid">{city}</p>
                 <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${dealerInfo.coordinates.lat},${dealerInfo.coordinates.lng}`}
+                  href={mapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-sm text-wuling-red hover:underline mt-2"
@@ -102,10 +152,10 @@ export default function DealerPage() {
               <div>
                 <p className="text-xs text-wuling-gray-mid uppercase tracking-widest mb-1">Telepon</p>
                 <a
-                  href={`tel:${dealerInfo.phone}`}
+                  href={`tel:${phone}`}
                   className="font-medium text-wuling-black hover:text-wuling-red transition-colors"
                 >
-                  {dealerInfo.phone}
+                  {phone}
                 </a>
                 <p className="text-sm text-wuling-gray-mid mt-0.5">Layanan pelanggan & informasi umum</p>
               </div>
@@ -122,12 +172,12 @@ export default function DealerPage() {
               <div>
                 <p className="text-xs text-wuling-gray-mid uppercase tracking-widest mb-1">WhatsApp</p>
                 <a
-                  href={`https://wa.me/${dealerInfo.whatsapp}?text=Halo, saya ingin bertanya tentang Wuling`}
+                  href={`https://wa.me/${whatsapp}?text=Halo, saya ingin bertanya tentang Wuling`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-medium text-wuling-black hover:text-green-600 transition-colors"
                 >
-                  {dealerInfo.whatsapp}
+                  {whatsapp}
                 </a>
                 <p className="text-sm text-wuling-gray-mid mt-0.5">Chat langsung dengan tim kami</p>
               </div>
@@ -141,10 +191,10 @@ export default function DealerPage() {
               <div>
                 <p className="text-xs text-wuling-gray-mid uppercase tracking-widest mb-1">Email</p>
                 <a
-                  href={`mailto:${dealerInfo.email}`}
+                  href={`mailto:${email}`}
                   className="font-medium text-wuling-black hover:text-wuling-red transition-colors"
                 >
-                  {dealerInfo.email}
+                  {email}
                 </a>
                 <p className="text-sm text-wuling-gray-mid mt-0.5">Untuk pertanyaan & penawaran tertulis</p>
               </div>
@@ -159,9 +209,9 @@ export default function DealerPage() {
                 <p className="text-xs text-wuling-gray-mid uppercase tracking-widest mb-3">Jam Operasional</p>
                 <div className="space-y-2">
                   {[
-                    { day: "Senin – Jumat", hours: dealerInfo.hours.weekday },
-                    { day: "Sabtu", hours: dealerInfo.hours.saturday },
-                    { day: "Minggu", hours: dealerInfo.hours.sunday },
+                    { day: "Senin – Jumat", hours: hours.weekday },
+                    { day: "Sabtu", hours: hours.saturday },
+                    { day: "Minggu", hours: hours.sunday },
                   ].map((item) => (
                     <div key={item.day} className="flex justify-between items-center">
                       <span className="text-sm text-wuling-gray-mid">{item.day}</span>
@@ -184,7 +234,7 @@ export default function DealerPage() {
               </div>
               <div className="h-72 bg-wuling-gray relative">
                 <iframe
-                  src={`https://maps.google.com/maps?q=${dealerInfo.coordinates.lat},${dealerInfo.coordinates.lng}&z=16&output=embed`}
+                  src={embedUrl}
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
@@ -195,9 +245,9 @@ export default function DealerPage() {
                 />
               </div>
               <div className="px-5 py-3 flex justify-between items-center">
-                <p className="text-xs text-wuling-gray-mid">{dealerInfo.address}</p>
+                <p className="text-xs text-wuling-gray-mid">{address}</p>
                 <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${dealerInfo.coordinates.lat},${dealerInfo.coordinates.lng}`}
+                  href={mapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs text-wuling-red font-medium hover:underline flex items-center gap-1"
@@ -294,7 +344,7 @@ export default function DealerPage() {
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             <a
-              href={`https://wa.me/${dealerInfo.whatsapp}?text=Halo, saya ingin booking kunjungan ke showroom Wuling`}
+              href={`https://wa.me/${whatsapp}?text=Halo, saya ingin booking kunjungan ke showroom Wuling`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-white text-wuling-red font-semibold px-6 py-3 rounded hover:bg-gray-100 transition-colors"

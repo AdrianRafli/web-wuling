@@ -1,13 +1,74 @@
 import Link from "next/link";
-import { cars } from "@/data/cars";
-import { dealerInfo } from "@/data/dealer";
 import { formatPrice } from "@/lib/utils";
 import { MapPin, Phone, Mail, ArrowRight, Zap, Shield, Award } from "lucide-react";
 import CarImage from "@/components/ui/CarImage";
 
-const featuredCars = cars.slice(0, 3);
+// ============================================================
+// Types
+// ============================================================
+interface CarVariant {
+  price: number;
+}
 
-export default function HomePage() {
+interface FeaturedCar {
+  id: number;
+  slug: string;
+  name: string;
+  tagline: string;
+  category: string;
+  thumbnail: string;
+  isNew: boolean;
+  isElectric: boolean;
+  highlights: { text: string }[];
+  variants: CarVariant[];
+}
+
+interface DealerData {
+  name: string;
+  address: string;
+  city: string;
+  phone: string;
+  whatsapp: string;
+  email: string;
+}
+
+// ============================================================
+// Data fetching — Server Component (no "use client")
+// ============================================================
+async function getFeaturedCars(): Promise<FeaturedCar[]> {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"}/api/cars?featured=true`,
+    { next: { revalidate: 3600 } } // ISR — revalidasi tiap 1 jam
+  );
+  if (!res.ok) return [];
+  const json = await res.json();
+  return (json.data as FeaturedCar[]).slice(0, 3);
+}
+
+async function getDealer(): Promise<DealerData | null> {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"}/api/dealer`,
+    { next: { revalidate: 86400 } } // ISR — revalidasi tiap 24 jam
+  );
+  if (!res.ok) return null;
+  const json = await res.json();
+  return json.data as DealerData;
+}
+
+// ============================================================
+// Page
+// ============================================================
+export default async function HomePage() {
+  const [featuredCars, dealer] = await Promise.all([
+    getFeaturedCars(),
+    getDealer(),
+  ]);
+
+  const whatsapp  = dealer?.whatsapp ?? "628133399568";
+  const phone     = dealer?.phone    ?? "628133399568";
+  const email     = dealer?.email    ?? "";
+  const address   = dealer ? `${dealer.address}, ${dealer.city}` : "";
+
   return (
     <div>
       {/* ===== HERO BANNER ===== */}
@@ -23,7 +84,7 @@ export default function HomePage() {
 
         <div className="container-main relative z-20">
           <p className="text-wuling-red font-semibold text-sm uppercase tracking-widest mb-3">
-            Dealer Resmi Wuling — {dealerInfo.city}
+            Dealer Resmi Wuling — {dealer?.city ?? "Semarang"}
           </p>
           <h1 className="font-display text-4xl md:text-6xl font-bold text-white leading-tight max-w-2xl">
             Temukan Mobil <span className="text-wuling-red">Impian</span> Anda
@@ -38,7 +99,7 @@ export default function HomePage() {
               <ArrowRight size={16} />
             </Link>
             <a
-              href={`https://wa.me/${dealerInfo.whatsapp}`}
+              href={`https://wa.me/${whatsapp}`}
               target="_blank"
               rel="noopener noreferrer"
               className="btn-outline inline-flex items-center gap-2 border-white text-white hover:bg-white hover:text-wuling-black"
@@ -59,7 +120,7 @@ export default function HomePage() {
             </p>
           </div>
           <a
-            href={`https://wa.me/${dealerInfo.whatsapp}?text=Halo, saya ingin tahu info promo Wuling bulan ini`}
+            href={`https://wa.me/${whatsapp}?text=Halo, saya ingin tahu info promo Wuling bulan ini`}
             target="_blank"
             rel="noopener noreferrer"
             className="shrink-0 bg-white text-wuling-red font-semibold text-sm px-5 py-2 rounded hover:bg-gray-100 transition-colors"
@@ -121,7 +182,6 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {featuredCars.map((car) => {
-              const thumb = car.thumbnail;
               const basePrice = car.variants[0]?.price ?? 0;
               return (
                 <Link
@@ -131,9 +191,9 @@ export default function HomePage() {
                 >
                   {/* Gambar */}
                   <div className="relative h-52 bg-white overflow-hidden flex items-center justify-center p-4">
-                    {thumb ? (
+                    {car.thumbnail ? (
                       <CarImage
-                        src={thumb}
+                        src={car.thumbnail}
                         alt={car.name}
                         className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                         fallback={car.name}
@@ -172,10 +232,10 @@ export default function HomePage() {
                     <div className="flex flex-wrap gap-1.5 mb-4">
                       {car.highlights.slice(0, 3).map((h) => (
                         <span
-                          key={h}
+                          key={h.text}
                           className="text-xs bg-wuling-gray text-wuling-gray-mid px-2.5 py-1 rounded-full"
                         >
-                          {h}
+                          {h.text}
                         </span>
                       ))}
                     </div>
@@ -229,7 +289,7 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-3xl mx-auto">
             <a
-              href={`https://wa.me/${dealerInfo.whatsapp}?text=Halo, saya ingin bertanya tentang mobil Wuling`}
+              href={`https://wa.me/${whatsapp}?text=Halo, saya ingin bertanya tentang mobil Wuling`}
               target="_blank"
               rel="noopener noreferrer"
               className="bg-white rounded-xl p-6 text-center shadow-sm hover:shadow-md transition-shadow group"
@@ -241,38 +301,40 @@ export default function HomePage() {
                 </svg>
               </div>
               <h4 className="font-display font-semibold text-wuling-black mb-1">WhatsApp</h4>
-              <p className="text-sm text-wuling-gray-mid">{dealerInfo.whatsapp}</p>
+              <p className="text-sm text-wuling-gray-mid">{whatsapp}</p>
             </a>
 
             <a
-              href={`tel:${dealerInfo.phone}`}
+              href={`tel:${phone}`}
               className="bg-white rounded-xl p-6 text-center shadow-sm hover:shadow-md transition-shadow group"
             >
               <div className="w-12 h-12 bg-wuling-gray rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-gray-200 transition-colors">
                 <Phone size={22} className="text-wuling-red" />
               </div>
               <h4 className="font-display font-semibold text-wuling-black mb-1">Telepon</h4>
-              <p className="text-sm text-wuling-gray-mid">{dealerInfo.phone}</p>
+              <p className="text-sm text-wuling-gray-mid">{phone}</p>
             </a>
 
             <a
-              href={`mailto:${dealerInfo.email}`}
+              href={`mailto:${email}`}
               className="bg-white rounded-xl p-6 text-center shadow-sm hover:shadow-md transition-shadow group"
             >
               <div className="w-12 h-12 bg-wuling-gray rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-gray-200 transition-colors">
                 <Mail size={22} className="text-wuling-red" />
               </div>
               <h4 className="font-display font-semibold text-wuling-black mb-1">Email</h4>
-              <p className="text-sm text-wuling-gray-mid">{dealerInfo.email}</p>
+              <p className="text-sm text-wuling-gray-mid">{email}</p>
             </a>
           </div>
 
-          <div className="mt-8 text-center">
-            <div className="inline-flex items-center gap-2 text-sm text-wuling-gray-mid">
-              <MapPin size={15} className="text-wuling-red" />
-              {dealerInfo.address}, {dealerInfo.city}
+          {address && (
+            <div className="mt-8 text-center">
+              <div className="inline-flex items-center gap-2 text-sm text-wuling-gray-mid">
+                <MapPin size={15} className="text-wuling-red" />
+                {address}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
     </div>

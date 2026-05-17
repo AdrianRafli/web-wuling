@@ -1,7 +1,5 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCarBySlug, cars } from "@/data/cars";
-import { dealerInfo } from "@/data/dealer";
 import { formatPrice } from "@/lib/utils";
 import {
   ArrowLeft, Zap, Users, Fuel,
@@ -11,9 +9,92 @@ import CarCarousel from "@/components/sections/CarCarousel";
 import SpecTabs from "@/components/sections/SpecTabs";
 import CarImage from "@/components/ui/CarImage";
 
-export async function generateStaticParams() {
-  return cars.map((car) => ({ slug: car.slug }));
+// ============================================================
+// Types — sesuai response /api/cars/[slug]
+// ============================================================
+interface CarVariantSpec {
+  engine: string;
+  transmission: string;
+  power: string;
+  torque: string;
+  fuelType: string;
+  seats: number;
+  drivetrain: string | null;
+  dimLength: number | null;
+  dimWidth: number | null;
+  dimHeight: number | null;
+  dimWheelbase: number | null;
+  batteryCapacity: string | null;
+  batteryType: string | null;
+  rangeElectric: string | null;
+  rangeHybrid: string | null;
+  chargingAc: string | null;
+  chargingDc: string | null;
+  features: string[];
 }
+
+interface CarVariant {
+  id: number;
+  name: string;
+  price: number;
+  transmission: string;
+  order: number;
+  specs: CarVariantSpec | null;
+}
+
+interface CarImage {
+  id: number;
+  url: string;
+  alt: string;
+  type: string;
+  order: number;
+}
+
+interface RelatedCar {
+  slug: string;
+  name: string;
+  tagline: string;
+  thumbnail: string;
+  isNew: boolean;
+  isElectric: boolean;
+  variants: { price: number; name: string }[];
+}
+
+interface CarDetail {
+  id: number;
+  slug: string;
+  name: string;
+  tagline: string;
+  category: string;
+  thumbnail: string;
+  isNew: boolean;
+  isElectric: boolean;
+  highlights: { text: string; order: number }[];
+  images: CarImage[];
+  variants: CarVariant[];
+  related: RelatedCar[];
+}
+
+// ============================================================
+// Data fetching
+// ============================================================
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+
+async function getCar(slug: string): Promise<CarDetail | null> {
+  const res = await fetch(`${BASE_URL}/api/cars/${slug}`, {
+    next: { revalidate: 3600 },
+  });
+  if (!res.ok) return null;
+  const json = await res.json();
+  return json.data as CarDetail;
+}
+
+// generateStaticParams — opsional, aktifkan saat deploy ke Vercel
+// export async function generateStaticParams() {
+//   const res = await fetch(`${BASE_URL}/api/cars`);
+//   const json = await res.json();
+//   return (json.data ?? []).map((car: { slug: string }) => ({ slug: car.slug }));
+// }
 
 export async function generateMetadata({
   params,
@@ -21,7 +102,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const car = getCarBySlug(slug);
+  const car = await getCar(slug);
   if (!car) return {};
   return {
     title: `${car.name} — Wuling Semarang`,
@@ -29,21 +110,79 @@ export async function generateMetadata({
   };
 }
 
+// ============================================================
+// Page
+// ============================================================
 export default async function DetailMobilPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const car = getCarBySlug(slug);
+  const car = await getCar(slug);
   if (!car) notFound();
 
   const waText = encodeURIComponent(
     `Halo, saya tertarik dengan ${car.name}. Boleh minta info lebih lanjut?`
   );
 
+  // Ambil nomor WA dari env atau fallback
+  const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP ?? "628133399568";
+
   const defaultVariant = car.variants?.[0];
-  const heroImage = car.thumbnail;
+  const defaultSpec    = defaultVariant?.specs;
+
+  // Konversi images ke format yang dipakai CarCarousel (sesuaikan dengan CarImage type di components)
+  const carouselImages = car.images.map((img) => ({
+    url: img.url,
+    alt: img.alt,
+    type: img.type as "exterior" | "interior",
+  }));
+
+  // Konversi variants ke format yang dipakai SpecTabs
+  type ValidTransmission = "MT" | "AT" | "CVT" | "Single Speed" | "Dedicated Hybrid Transmission";
+  const specTabVariants = car.variants.map((v) => ({
+    name: v.name,
+    price: v.price,
+    transmission: v.transmission as ValidTransmission,
+    specs: v.specs
+      ? {
+          engine: v.specs.engine,
+          transmission: v.specs.transmission,
+          power: v.specs.power,
+          torque: v.specs.torque,
+          fuelType: v.specs.fuelType,
+          seats: v.specs.seats,
+          drivetrain: v.specs.drivetrain ?? undefined,
+          dimensions: {
+            length: v.specs.dimLength ?? 0,
+            width:  v.specs.dimWidth  ?? 0,
+            height: v.specs.dimHeight ?? 0,
+            wheelbase: v.specs.dimWheelbase ?? 0,
+          },
+          battery: v.specs.batteryCapacity
+            ? { capacity: v.specs.batteryCapacity, type: v.specs.batteryType ?? "" }
+            : undefined,
+          range: (v.specs.rangeElectric || v.specs.rangeHybrid)
+            ? {
+                electric: v.specs.rangeElectric ?? undefined,
+                hybrid:   v.specs.rangeHybrid   ?? undefined,
+              }
+            : undefined,
+          charging: (v.specs.chargingAc || v.specs.chargingDc)
+            ? {
+                ac: v.specs.chargingAc ?? undefined,
+                dc: v.specs.chargingDc ?? undefined,
+              }
+            : undefined,
+          features: v.specs.features,
+        }
+      : {
+          // Fallback specs kosong — seharusnya tidak terjadi jika seed benar
+          engine: "-", transmission: "-", power: "-", torque: "-",
+          fuelType: "-", seats: 0, features: [],
+        },
+  })) as import("@/types").CarVariant[];
 
   return (
     <div>
@@ -70,20 +209,20 @@ export default async function DetailMobilPage({
           </Link>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+            {/* Gambar hero */}
             <div className="relative rounded-xl h-72 md:h-96 overflow-hidden bg-white/10 flex items-center justify-center p-6">
-                {heroImage ? (
-                  <CarImage
-                    src={heroImage}
-                    alt={car.name}
-                    className="bg-white overflow-hidden relative flex items-center justify-center p-2"
-                    fallback={car.name}
-                  />
-                ) : (
+              {car.thumbnail ? (
+                <CarImage
+                  src={car.thumbnail}
+                  alt={car.name}
+                  className="w-full h-full object-contain"
+                  fallback={car.name}
+                />
+              ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-500 text-sm">
                   Foto {car.name}
                 </div>
               )}
-              {/* Badges */}
               <div className="absolute top-4 left-4 flex gap-2">
                 {car.isNew && (
                   <span className="bg-wuling-red text-white text-xs font-semibold px-3 py-1 rounded-full">
@@ -110,13 +249,13 @@ export default async function DetailMobilPage({
               <p className="text-gray-400 text-lg mt-2 mb-6">{car.tagline}</p>
 
               {/* Spec ringkas */}
-              {defaultVariant && (
+              {defaultSpec && (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                   {[
-                    { icon: <Users size={16} />, label: "Kapasitas", value: `${defaultVariant.specs.seats} Orang` },
-                    { icon: <Fuel size={16} />, label: "Bahan Bakar", value: defaultVariant.specs.fuelType },
-                    { icon: <Settings size={16} />, label: "Transmisi", value: defaultVariant.specs.transmission },
-                    { icon: <Zap size={16} />, label: "Tenaga", value: defaultVariant.specs.power },
+                    { icon: <Users size={16} />, label: "Kapasitas",   value: `${defaultSpec.seats} Orang` },
+                    { icon: <Fuel size={16} />,  label: "Bahan Bakar", value: defaultSpec.fuelType },
+                    { icon: <Settings size={16} />, label: "Transmisi", value: defaultSpec.transmission },
+                    { icon: <Zap size={16} />,   label: "Tenaga",      value: defaultSpec.power },
                   ].map((spec) => (
                     <div key={spec.label} className="bg-white/10 rounded-lg p-3 text-center">
                       <div className="flex justify-center text-wuling-red mb-1">{spec.icon}</div>
@@ -128,24 +267,22 @@ export default async function DetailMobilPage({
               )}
 
               {/* Spec EV tambahan */}
-              {defaultVariant?.specs.battery && (
+              {defaultSpec?.batteryCapacity && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-                  {defaultVariant.specs.battery.capacity && (
-                    <div className="bg-white/10 rounded-lg p-3 text-center">
-                      <p className="text-xs text-gray-400">Baterai</p>
-                      <p className="text-sm font-semibold">{defaultVariant.specs.battery.capacity}</p>
-                    </div>
-                  )}
-                  {defaultVariant.specs.range?.electric && (
+                  <div className="bg-white/10 rounded-lg p-3 text-center">
+                    <p className="text-xs text-gray-400">Baterai</p>
+                    <p className="text-sm font-semibold">{defaultSpec.batteryCapacity}</p>
+                  </div>
+                  {defaultSpec.rangeElectric && (
                     <div className="bg-white/10 rounded-lg p-3 text-center">
                       <p className="text-xs text-gray-400">Range Listrik</p>
-                      <p className="text-sm font-semibold">{defaultVariant.specs.range.electric}</p>
+                      <p className="text-sm font-semibold">{defaultSpec.rangeElectric}</p>
                     </div>
                   )}
-                  {defaultVariant.specs.range?.hybrid && (
+                  {defaultSpec.rangeHybrid && (
                     <div className="bg-white/10 rounded-lg p-3 text-center">
                       <p className="text-xs text-gray-400">Range Hybrid</p>
-                      <p className="text-sm font-semibold">{defaultVariant.specs.range.hybrid}</p>
+                      <p className="text-sm font-semibold">{defaultSpec.rangeHybrid}</p>
                     </div>
                   )}
                 </div>
@@ -155,11 +292,11 @@ export default async function DetailMobilPage({
               <div className="flex flex-wrap gap-2">
                 {car.highlights.map((h) => (
                   <span
-                    key={h}
+                    key={h.text}
                     className="flex items-center gap-1.5 text-sm bg-white/10 text-gray-200 px-3 py-1.5 rounded-full"
                   >
                     <CheckCircle2 size={13} className="text-wuling-red" />
-                    {h}
+                    {h.text}
                   </span>
                 ))}
               </div>
@@ -174,12 +311,11 @@ export default async function DetailMobilPage({
 
           {/* Kiri */}
           <div className="lg:col-span-2 space-y-10">
-
             {/* Carousel */}
             <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm space-y-6">
-              <CarCarousel images={car.images} type="exterior" title="Eksterior" />
+              <CarCarousel images={carouselImages} type="exterior" title="Eksterior" />
               <div className="border-t border-gray-100 pt-6">
-                <CarCarousel images={car.images} type="interior" title="Interior" />
+                <CarCarousel images={carouselImages} type="interior" title="Interior" />
               </div>
             </div>
 
@@ -191,7 +327,7 @@ export default async function DetailMobilPage({
               <p className="text-sm text-wuling-gray-mid mb-5">
                 Pilih varian untuk melihat spesifikasi dan fitur yang berbeda.
               </p>
-              <SpecTabs variants={car.variants} />
+              <SpecTabs variants={specTabVariants} />
             </div>
           </div>
 
@@ -203,8 +339,8 @@ export default async function DetailMobilPage({
                 <p className="text-xs text-gray-400 mt-0.5">Harga OTR Semarang</p>
               </div>
               <div className="divide-y divide-gray-100">
-                {car.variants.map((variant, i) => (
-                  <div key={i} className="px-5 py-4 hover:bg-wuling-gray/50 transition-colors">
+                {car.variants.map((variant) => (
+                  <div key={variant.id} className="px-5 py-4 hover:bg-wuling-gray/50 transition-colors">
                     <p className="text-sm font-semibold text-wuling-black leading-snug mb-1">
                       {variant.name}
                     </p>
@@ -221,7 +357,7 @@ export default async function DetailMobilPage({
               </div>
               <div className="p-5 space-y-3 border-t border-gray-100">
                 <a
-                  href={`https://wa.me/${dealerInfo.whatsapp}?text=${waText}`}
+                  href={`https://wa.me/${whatsapp}?text=${waText}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full btn-primary flex items-center justify-center gap-2 text-sm"
@@ -246,55 +382,56 @@ export default async function DetailMobilPage({
       </section>
 
       {/* ===== MOBIL LAINNYA ===== */}
-      <section className="py-12 bg-wuling-gray border-t border-gray-200">
-        <div className="container-main">
-          <h2 className="font-display font-bold text-xl text-wuling-black mb-6">
-            Lihat Mobil Lainnya
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {cars
-              .filter((c) => c.slug !== car.slug)
-              .slice(0, 4)
-              .map((c) => {
-                const thumb = c.thumbnail;
-                return (
-                  <Link
-                    key={c.id}
-                    href={`/mobil/${c.slug}`}
-                    className="group bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
-                  >
-                    <div className="h-32 bg-wuling-gray overflow-hidden relative">
-                      {thumb ? (
-                        <CarImage
-                          src={thumb}
-                          alt={c.name}
-                          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-                          fallback={c.name}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs text-gray-300">
-                          {c.name}
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-3">
-                      <p className="text-xs text-wuling-gray-mid">{c.category}</p>
-                      <p className="text-sm font-semibold text-wuling-black group-hover:text-wuling-red transition-colors leading-tight">
+      {car.related.length > 0 && (
+        <section className="py-12 bg-wuling-gray border-t border-gray-200">
+          <div className="container-main">
+            <h2 className="font-display font-bold text-xl text-wuling-black mb-6">
+              Lihat Mobil Lainnya
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {car.related.map((c) => (
+                <Link
+                  key={c.slug}
+                  href={`/mobil/${c.slug}`}
+                  className="group bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+                >
+                  <div className="h-32 bg-wuling-gray overflow-hidden relative flex items-center justify-center p-2">
+                    {c.thumbnail ? (
+                      <CarImage
+                        src={c.thumbnail}
+                        alt={c.name}
+                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                        fallback={c.name}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-xs text-gray-300">
                         {c.name}
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <p className="text-xs text-wuling-gray-mid">{c.isElectric ? "Electric" : "ICE"}</p>
+                    <p className="text-sm font-semibold text-wuling-black group-hover:text-wuling-red transition-colors leading-tight">
+                      {c.name}
+                    </p>
+                    {c.variants[0]?.price > 0 && (
+                      <p className="text-xs text-wuling-red font-medium mt-0.5">
+                        {formatPrice(c.variants[0].price)}
                       </p>
-                    </div>
-                  </Link>
-                );
-              })}
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+            <div className="mt-6 text-center">
+              <Link href="/mobil" className="inline-flex items-center gap-2 btn-outline text-sm">
+                Lihat Semua Mobil
+                <ArrowRight size={14} />
+              </Link>
+            </div>
           </div>
-          <div className="mt-6 text-center">
-            <Link href="/mobil" className="inline-flex items-center gap-2 btn-outline text-sm">
-              Lihat Semua Mobil
-              <ArrowRight size={14} />
-            </Link>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 }
