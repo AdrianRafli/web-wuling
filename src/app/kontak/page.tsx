@@ -32,27 +32,32 @@ interface CarOption {
   name: string;
 }
 
-// ============================================================
-// Data fetching
-// ============================================================
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+import { prisma } from "@/lib/prisma";
 
+// ============================================================
+// Data fetching — langsung Prisma
+// ============================================================
 async function getDealer(): Promise<Dealer | null> {
-  const res = await fetch(`${BASE_URL}/api/dealer`, {
-    next: { revalidate: 86400 },
-  });
-  if (!res.ok) return null;
-  const json = await res.json();
-  return json.data as Dealer;
+  const raw = await prisma.dealer.findFirst({ include: { hours: true } });
+  if (!raw) return null;
+  return {
+    name:     raw.name,
+    address:  raw.address,
+    city:     raw.city     ?? "",
+    phone:    raw.phone    ?? "",
+    whatsapp: raw.whatsapp ?? "",
+    email:    raw.email    ?? "",
+    lat:      raw.lat      ?? -6.9667,
+    lng:      raw.lng      ?? 110.4167,
+    hours: raw.hours
+      ? { weekday: raw.hours.weekday, saturday: raw.hours.saturday, sunday: raw.hours.sunday }
+      : null,
+  };
 }
 
 async function getCarOptions(): Promise<string[]> {
-  const res = await fetch(`${BASE_URL}/api/cars`, {
-    next: { revalidate: 3600 },
-  });
-  if (!res.ok) return [];
-  const json = await res.json();
-  return (json.data as CarOption[]).map((c) => c.name);
+  const cars = await prisma.car.findMany({ select: { name: true }, orderBy: { id: "asc" } });
+  return cars.map((c) => c.name);
 }
 
 // ============================================================

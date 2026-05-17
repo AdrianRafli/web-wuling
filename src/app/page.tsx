@@ -3,66 +3,51 @@ import { formatPrice } from "@/lib/utils";
 import { MapPin, Phone, Mail, ArrowRight, Zap, Shield, Award } from "lucide-react";
 import CarImage from "@/components/ui/CarImage";
 
-// ============================================================
-// Types
-// ============================================================
-interface CarVariant {
-  price: number;
-}
-
-interface FeaturedCar {
-  id: number;
-  slug: string;
-  name: string;
-  tagline: string;
-  category: string;
-  thumbnail: string;
-  isNew: boolean;
-  isElectric: boolean;
-  highlights: { text: string }[];
-  variants: CarVariant[];
-}
-
-interface DealerData {
-  name: string;
-  address: string;
-  city: string;
-  phone: string;
-  whatsapp: string;
-  email: string;
-}
+import { prisma } from "@/lib/prisma";
 
 // ============================================================
-// Data fetching — Server Component (no "use client")
+// Data fetching — langsung Prisma (tidak perlu HTTP fetch)
 // ============================================================
-async function getFeaturedCars(): Promise<FeaturedCar[]> {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"}/api/cars?featured=true`,
-    { next: { revalidate: 3600 } } // ISR — revalidasi tiap 1 jam
-  );
-  if (!res.ok) return [];
-  const json = await res.json();
-  return (json.data as FeaturedCar[]).slice(0, 3);
+async function getFeaturedCars() {
+  return prisma.car.findMany({
+    where: { isNew: true },
+    take: 3,
+    select: {
+      id: true, slug: true, name: true, tagline: true,
+      category: true, thumbnail: true, isNew: true, isElectric: true,
+      highlights: { orderBy: { order: "asc" }, select: { text: true } },
+      variants: {
+        orderBy: { order: "asc" },
+        take: 1,
+        select: { price: true },
+      },
+    },
+  });
 }
 
-async function getDealer(): Promise<DealerData | null> {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"}/api/dealer`,
-    { next: { revalidate: 86400 } } // ISR — revalidasi tiap 24 jam
-  );
-  if (!res.ok) return null;
-  const json = await res.json();
-  return json.data as DealerData;
+async function getDealer() {
+  return prisma.dealer.findFirst({
+    select: {
+      name: true, address: true, city: true,
+      phone: true, whatsapp: true, email: true,
+    },
+  });
 }
 
 // ============================================================
 // Page
 // ============================================================
 export default async function HomePage() {
-  const [featuredCars, dealer] = await Promise.all([
+  const [featuredCarsRaw, dealer] = await Promise.all([
     getFeaturedCars(),
     getDealer(),
   ]);
+
+  // Konversi BigInt price ke Number agar kompatibel dengan formatPrice()
+  const featuredCars = featuredCarsRaw.map((car) => ({
+    ...car,
+    variants: car.variants.map((v) => ({ ...v, price: Number(v.price) })),
+  }));
 
   const whatsapp  = dealer?.whatsapp ?? "628133399568";
   const phone     = dealer?.phone    ?? "628133399568";

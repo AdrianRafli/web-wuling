@@ -75,26 +75,54 @@ interface CarDetail {
   related: RelatedCar[];
 }
 
-// ============================================================
-// Data fetching
-// ============================================================
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+import { prisma } from "@/lib/prisma";
 
+// ============================================================
+// Data fetching — langsung Prisma
+// ============================================================
 async function getCar(slug: string): Promise<CarDetail | null> {
-  const res = await fetch(`${BASE_URL}/api/cars/${slug}`, {
-    next: { revalidate: 3600 },
+  const car = await prisma.car.findUnique({
+    where: { slug },
+    include: {
+      images:     { orderBy: { order: "asc" } },
+      highlights: { orderBy: { order: "asc" } },
+      variants:   { orderBy: { order: "asc" }, include: { specs: true } },
+    },
   });
-  if (!res.ok) return null;
-  const json = await res.json();
-  return json.data as CarDetail;
+  if (!car) return null;
+
+  // Ambil related (same category, exclude current, max 3)
+  const relatedRaw = await prisma.car.findMany({
+    where: { category: car.category, slug: { not: slug } },
+    take: 3,
+    select: {
+      slug: true, name: true, tagline: true,
+      thumbnail: true, isNew: true, isElectric: true,
+      variants: { orderBy: { order: "asc" }, take: 1, select: { price: true, name: true } },
+    },
+  });
+
+  return {
+    ...car,
+    variants: car.variants.map((v) => ({
+      ...v,
+      price: Number(v.price),
+      specs: v.specs
+        ? { ...v.specs, features: v.specs.features as string[] }
+        : null,
+    })),
+    related: relatedRaw.map((r) => ({
+      ...r,
+      variants: r.variants.map((v) => ({ ...v, price: Number(v.price) })),
+    })),
+  } as CarDetail;
 }
 
-// generateStaticParams — opsional, aktifkan saat deploy ke Vercel
-// export async function generateStaticParams() {
-//   const res = await fetch(`${BASE_URL}/api/cars`);
-//   const json = await res.json();
-//   return (json.data ?? []).map((car: { slug: string }) => ({ slug: car.slug }));
-// }
+// generateStaticParams — pre-render semua halaman detail saat build
+export async function generateStaticParams() {
+  const cars = await prisma.car.findMany({ select: { slug: true } });
+  return cars.map((car) => ({ slug: car.slug }));
+}
 
 export async function generateMetadata({
   params,
@@ -139,7 +167,7 @@ export default async function DetailMobilPage({
     type: img.type as "exterior" | "interior",
   }));
 
-  // Konversi variants ke format yang dipakai SpecTabs
+  // Cast transmission ke union type CarVariant dari @/types agar kompatibel dengan SpecTabs
   type ValidTransmission = "MT" | "AT" | "CVT" | "Single Speed" | "Dedicated Hybrid Transmission";
   const specTabVariants = car.variants.map((v) => ({
     name: v.name,
