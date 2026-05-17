@@ -38,7 +38,7 @@ export default function ContactForm({ carOptions, whatsapp }: Props) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
@@ -59,11 +59,29 @@ Pesan: ${form.message || "-"}`;
 
     const waUrl = `https://wa.me/${whatsapp}?text=${encodeURIComponent(message)}`;
 
-    setTimeout(() => {
-      setLoading(false);
-      setSubmitted(true);
-      window.open(waUrl, "_blank");
-    }, 800);
+    // Simpan lead ke database (fire-and-forget — gagal pun WA tetap terbuka)
+    try {
+      await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          phone: form.phone,
+          email: form.email || undefined,
+          carInterest: form.carInterest || undefined,
+          type: form.type,
+          preferredDate: form.preferredDate || undefined,
+          message: form.message || undefined,
+        }),
+      });
+    } catch {
+      // Gagal simpan ke DB tidak menghalangi user membuka WhatsApp
+      console.warn("Gagal menyimpan lead ke database");
+    }
+
+    setLoading(false);
+    setSubmitted(true);
+    window.open(waUrl, "_blank");
   };
 
   if (submitted) {
