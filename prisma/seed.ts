@@ -8,7 +8,7 @@ async function main() {
   // ============================================================
   // HAPUS DATA LAMA (urutan penting karena foreign key)
   // ============================================================
-  await prisma.lead.deleteMany();
+  // await prisma.lead.deleteMany();
   await prisma.dealerHours.deleteMany();
   await prisma.dealer.deleteMany();
   await prisma.carVariantSpec.deleteMany();
@@ -23,19 +23,19 @@ async function main() {
   // ============================================================
   const dealer = await prisma.dealer.create({
     data: {
-      name: "Wuling Motors Semarang",
-      address: "Jl. Pemuda No. 123, Sekayu, Semarang Tengah",
+      name: "Wuling Semarang Srondol",
+      address: "Jl. Setia Budi No.281, Srondol Wetan, Kec. Banyumanik, Kota Semarang, Jawa Tengah",
       city: "Semarang, Jawa Tengah",
       phone: "628133399568",
       whatsapp: "628133399568",
       email: "adrianrafly20@gmail.com",
-      lat: -6.9667,
-      lng: 110.4167,
+      lat: -7.070033,
+      lng: 110.411235,
       hours: {
         create: {
-          weekday: "08.00 – 17.00 WIB",
-          saturday: "08.00 – 15.00 WIB",
-          sunday: "Tutup",
+          weekday: "09.00 – 16.30 WIB",
+          saturday: "09.00 – 15.00 WIB",
+          sunday: "09.00 – 15.00 WIB",
         },
       },
     },

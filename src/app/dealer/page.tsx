@@ -1,7 +1,7 @@
 import { MapPin, Phone, Mail, Clock, Car, Wrench, ShieldCheck, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import CarImage from "@/components/ui/CarImage";
-
+export const revalidate = 3600;
 // ============================================================
 // Types
 // ============================================================
@@ -274,10 +274,10 @@ export default async function DealerPage() {
               </div>
               <div className="grid grid-cols-2 gap-1 p-1">
                 {[
-                  { url: "/images/dealer/showroom-1.jpg", alt: "Tampak Depan Showroom" },
-                  { url: "/images/dealer/showroom-2.jpg", alt: "Area Display Mobil" },
-                  { url: "/images/dealer/showroom-3.jpg", alt: "Ruang Tunggu" },
-                  { url: "/images/dealer/showroom-4.jpg", alt: "Area Servis" },
+                  { url: "/images/dealer/dealer-1.webp", alt: "Tampak Depan Showroom" },
+                  { url: "/images/dealer/dealer-2.webp", alt: "Area Display Mobil" },
+                  { url: "/images/dealer/dealer-3.webp", alt: "Area Servis" },
+                  { url: "/images/dealer/dealer-4.webp", alt: "Ruang Tunggu" },
                 ].map((img) => (
                   <div key={img.alt} className="relative aspect-video bg-wuling-gray rounded overflow-hidden">
                     <CarImage

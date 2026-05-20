@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Menu, X, Phone } from "lucide-react";
-import { dealerInfo } from "@/data";
 
 const navLinks = [
   { href: "/", label: "Beranda" },
@@ -13,7 +12,13 @@ const navLinks = [
   { href: "/kontak", label: "Kontak" },
 ];
 
-export default function Navbar() {
+// Props dari layout.tsx (data dealer di-fetch di server)
+type Props = {
+  city: string;
+  phone: string;
+};
+
+export default function Navbar({ city, phone }: Props) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -22,13 +27,10 @@ export default function Navbar() {
       {/* Top bar */}
       <div className="bg-wuling-red text-white text-sm py-1.5">
         <div className="container-main flex justify-between items-center">
-          <span>Dealer Resmi Wuling — {dealerInfo.city}</span>
-          <a
-            href={`tel:${dealerInfo.phone}`}
-            className="flex items-center gap-1.5 hover:underline"
-          >
+          <span>Dealer Resmi Wuling — {city}</span>
+          <a href={`tel:${phone}`} className="flex items-center gap-1.5 hover:underline">
             <Phone size={13} />
-            {dealerInfo.phone}
+            {phone}
           </a>
         </div>
       </div>
@@ -45,7 +47,7 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Desktop nav — sekarang di kanan */}
+        {/* Desktop nav */}
         <ul className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
             <li key={link.href}>

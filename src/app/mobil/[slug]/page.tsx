@@ -9,6 +9,8 @@ import CarCarousel from "@/components/sections/CarCarousel";
 import SpecTabs from "@/components/sections/SpecTabs";
 import CarImage from "@/components/ui/CarImage";
 
+export const revalidate = 3600;
+
 // ============================================================
 // Types — sesuai response /api/cars/[slug]
 // ============================================================

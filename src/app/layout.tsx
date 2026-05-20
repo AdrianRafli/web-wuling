@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import WhatsAppButton from "@/components/ui/WhatsappButton";
+import { prisma } from "@/lib/prisma";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -22,18 +23,27 @@ export const metadata: Metadata = {
   keywords: ["Wuling", "dealer mobil", "Semarang", "SUV", "MPV", "mobil listrik"],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Fetch dealer sekali di root layout — dipakai Navbar & WhatsAppButton
+  const dealer = await prisma.dealer.findFirst({
+    select: { city: true, phone: true, whatsapp: true },
+  });
+
+  const city     = dealer?.city     ?? "Semarang, Jawa Tengah";
+  const phone    = dealer?.phone    ?? "628133399568";
+  const whatsapp = dealer?.whatsapp ?? "628133399568";
+
   return (
     <html lang="id">
       <body className={`${inter.variable} ${outfit.variable} font-sans antialiased`}>
-        <Navbar />
+        <Navbar city={city} phone={phone} />
         <main>{children}</main>
         <Footer />
-        <WhatsAppButton />
+        <WhatsAppButton whatsapp={whatsapp} />
       </body>
     </html>
   );

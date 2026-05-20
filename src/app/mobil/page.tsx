@@ -3,6 +3,8 @@ import { ArrowRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import KatalogClient, { type Car } from "./KatalogClient";
 
+export const revalidate = 3600;
+
 export const metadata = {
   title: "Katalog Mobil Wuling — Dealer Resmi Semarang",
   description:

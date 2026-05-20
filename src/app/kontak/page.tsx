@@ -1,6 +1,7 @@
 import { MapPin, Phone, Mail, Clock, ArrowRight, Car } from "lucide-react";
 import Link from "next/link";
 import ContactForm from "@/components/sections/ContactForm";
+export const revalidate = 3600;
 
 export const metadata = {
   title: "Kontak & Test Drive — Wuling Semarang",

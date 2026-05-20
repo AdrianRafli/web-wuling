@@ -5,6 +5,8 @@ import CarImage from "@/components/ui/CarImage";
 
 import { prisma } from "@/lib/prisma";
 
+export const revalidate = 3600;
+
 // ============================================================
 // Data fetching — langsung Prisma (tidak perlu HTTP fetch)
 // ============================================================
@@ -61,9 +63,9 @@ export default async function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-r from-wuling-black via-wuling-black/80 to-transparent z-10" />
         <div className="absolute inset-0">
           <CarImage
-            src="/images/dealer/hero-bg.jpg"
+            src="/images/dealer/dealer-1.webp"
             alt="Wuling Dealer Semarang"
-            className="w-full h-full object-cover opacity-40"
+            className="w-full h-full object-cover opacity-80"
           />
         </div>
 
