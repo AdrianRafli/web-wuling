@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import WhatsAppButton from "@/components/ui/WhatsappButton";
+import ChatBot from "@/components/ChatBot";
 import { prisma } from "@/lib/prisma";
 
 const inter = Inter({
@@ -44,6 +45,7 @@ export default async function RootLayout({
         <main>{children}</main>
         <Footer />
         <WhatsAppButton whatsapp={whatsapp} />
+        <ChatBot />
       </body>
     </html>
   );
