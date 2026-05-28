@@ -1,0 +1,16 @@
+@startuml UC3_Event
+skinparam activityBackgroundColor #dae8fc
+skinparam activityBorderColor #6c8ebf
+skinparam arrowColor #333333
+
+start
+:Membuka halaman event;
+:Sistem menampilkan daftar event pameran;
+if (Memilih event?) then (ya)
+  :Sistem menampilkan detail event\n(tanggal, lokasi, keterangan);
+else (tidak)
+  :Tetap di halaman daftar event;
+endif
+stop
+
+@enduml

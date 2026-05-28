@@ -1,0 +1,17 @@
+@startuml UC5_WhatsApp
+skinparam activityBackgroundColor #dae8fc
+skinparam activityBorderColor #6c8ebf
+skinparam arrowColor #333333
+
+start
+:Menekan tombol "Konsultasi via WhatsApp";
+:Sistem membuka aplikasi WhatsApp;
+if (WhatsApp tersedia?) then (ya)
+  :Membuka chat dengan nomor sales dealer;
+  :Customer mengirim pesan konsultasi;
+else (tidak)
+  :Sistem mengarahkan ke WhatsApp Web;
+endif
+stop
+
+@enduml

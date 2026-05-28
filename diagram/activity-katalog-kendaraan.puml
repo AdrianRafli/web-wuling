@@ -1,0 +1,17 @@
+@startuml UC1_Katalog
+skinparam activityBackgroundColor #dae8fc
+skinparam activityBorderColor #6c8ebf
+skinparam arrowColor #333333
+
+start
+:Membuka halaman katalog;
+:Sistem menampilkan daftar kendaraan;
+if (Memilih kendaraan?) then (ya)
+  :Sistem menampilkan detail kendaraan;
+  :Menampilkan spesifikasi & harga OTR Semarang;
+else (tidak)
+  :Tetap di halaman daftar;
+endif
+stop
+
+@enduml

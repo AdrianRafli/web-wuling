@@ -1,0 +1,37 @@
+@startuml UseCase
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+actor "Customer" as customer
+
+rectangle "Website Promosi Dealer Mobil Semarang" {
+
+  usecase "Melihat Katalog Kendaraan" as UC1
+  usecase "Melihat Informasi Promo" as UC2
+  usecase "Melihat Informasi Event" as UC3
+  usecase "Melihat FAQ Layanan Servis" as UC4
+  usecase "Konsultasi via WhatsApp" as UC5
+  usecase "Menggunakan Chatbot" as UC6
+
+  usecase "Memilih Kendaraan" as UC1a
+  usecase "Melihat Spesifikasi\n& Harga OTR" as UC1b
+
+  usecase "Mengirim Pesan\nke Chatbot" as UC6a
+  usecase "Menerima Respons\nOtomatis" as UC6b
+
+  UC1 .> UC1a : «include»
+  UC1 .> UC1b : «include»
+
+  UC6 .> UC6a : «include»
+  UC6 .> UC6b : «include»
+}
+
+customer --> UC1
+customer --> UC2
+customer --> UC3
+customer --> UC4
+customer --> UC5
+customer --> UC6
+
+@enduml

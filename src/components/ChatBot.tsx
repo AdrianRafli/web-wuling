@@ -163,31 +163,42 @@ export default function ChatBot() {
   const [unread, setUnread] = useState(1);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const idCounter = useRef(2);
+  const openRef = useRef(open);
 
   useEffect(() => {
-    if (open) {
-      setUnread(0);
-      setTimeout(() => inputRef.current?.focus(), 300);
-    }
+    openRef.current = open;
   }, [open]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, typing]);
 
+  function handleToggle() {
+    setOpen((v) => {
+      const next = !v;
+      if (next) {
+        setUnread(0);
+        setTimeout(() => inputRef.current?.focus(), 300);
+      }
+      return next;
+    });
+  }
+
   function send(text: string) {
     if (!text.trim()) return;
-    const userMsg: Message = { id: Date.now(), from: "user", text: text.trim() };
+    const userId = idCounter.current++;
+    const userMsg: Message = { id: userId, from: "user", text: text.trim() };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setTyping(true);
 
     setTimeout(() => {
-      const reply = getReply(text);
+      const reply = { ...getReply(text), id: idCounter.current++ };
       setTyping(false);
       setMessages((prev) => [...prev, reply]);
-      if (!open) setUnread((n) => n + 1);
-    }, 700 + Math.random() * 400);
+      if (!openRef.current) setUnread((n) => n + 1);
+    }, 800);
   }
 
   return (
@@ -214,7 +225,7 @@ export default function ChatBot() {
             <p className="text-white/70 text-xs">Online • Biasanya membalas instan</p>
           </div>
           <button
-            onClick={() => setOpen(false)}
+            onClick={handleToggle}
             className="text-white/80 hover:text-white transition-colors"
             aria-label="Tutup chat"
           >
@@ -312,7 +323,7 @@ export default function ChatBot() {
 
       {/* ── Toggle Button ── */}
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={handleToggle}
         className="fixed bottom-[5.5rem] right-6 z-40 w-13 h-13 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95"
         style={{
           background: open ? "var(--color-primary, #c00)" : "var(--color-primary, #c00)",

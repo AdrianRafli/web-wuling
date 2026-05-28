@@ -1,0 +1,16 @@
+@startuml UC2_Promo
+skinparam activityBackgroundColor #dae8fc
+skinparam activityBorderColor #6c8ebf
+skinparam arrowColor #333333
+
+start
+:Membuka halaman promo;
+:Sistem menampilkan daftar promo aktif;
+if (Memilih promo?) then (ya)
+  :Sistem menampilkan detail promo;
+else (tidak)
+  :Tetap di halaman daftar promo;
+endif
+stop
+
+@enduml
