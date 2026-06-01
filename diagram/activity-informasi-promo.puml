@@ -1,4 +1,4 @@
-@startuml UC2_Promo
+@startuml activity-informasi-promo
 skinparam activityBackgroundColor #dae8fc
 skinparam activityBorderColor #6c8ebf
 skinparam arrowColor #333333

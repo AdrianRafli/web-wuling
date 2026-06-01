@@ -1,4 +1,4 @@
-@startuml UC6_Chatbot
+@startuml activity-chatbot
 skinparam activityBackgroundColor #dae8fc
 skinparam activityBorderColor #6c8ebf
 skinparam arrowColor #333333

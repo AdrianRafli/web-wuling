@@ -1,0 +1,24 @@
+@startuml sequence-informasi-event
+skinparam sequenceArrowThickness 1.5
+skinparam sequenceParticipantBackgroundColor #dae8fc
+skinparam sequenceParticipantBorderColor #6c8ebf
+
+actor Customer
+participant "Browser" as B
+participant "Next.js Page\n/event" as P
+participant "API Route\n/api/events" as A
+participant "Prisma ORM" as PR
+database "MySQL DB" as DB
+
+Customer -> B: Buka halaman event
+B -> P: GET /event
+P -> A: fetch(/api/events)
+A -> PR: event.findMany()
+PR -> DB: SELECT * FROM Event
+DB --> PR: data event
+PR --> A: List<Event>
+A --> P: JSON response
+P --> B: Render halaman event
+B --> Customer: Tampilkan daftar event pameran
+
+@enduml

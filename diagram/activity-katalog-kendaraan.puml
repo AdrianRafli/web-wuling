@@ -1,4 +1,4 @@
-@startuml UC1_Katalog
+@startuml activity-katalog-kendaraan
 skinparam activityBackgroundColor #dae8fc
 skinparam activityBorderColor #6c8ebf
 skinparam arrowColor #333333

@@ -1,0 +1,26 @@
+@startuml sequence-konsultasi-whatsapp
+skinparam sequenceArrowThickness 1.5
+skinparam sequenceParticipantBackgroundColor #dae8fc
+skinparam sequenceParticipantBorderColor #6c8ebf
+
+actor Customer
+participant "Browser" as B
+participant "Next.js Page" as P
+participant "API Route\n/api/dealer" as A
+participant "Prisma ORM" as PR
+database "MySQL DB" as DB
+participant "WhatsApp" as WA
+
+Customer -> B: Klik tombol "Konsultasi via WhatsApp"
+B -> P: Trigger onClick
+P -> A: fetch(/api/dealer)
+A -> PR: dealer.findFirst()
+PR -> DB: SELECT whatsapp FROM Dealer
+DB --> PR: nomor WhatsApp
+PR --> A: Dealer data
+A --> P: JSON response
+P -> B: Generate wa.me link\ndengan nomor dealer
+B -> WA: Redirect ke wa.me/[nomor]
+WA --> Customer: Membuka chat WhatsApp
+
+@enduml

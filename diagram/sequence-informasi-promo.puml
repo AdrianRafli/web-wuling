@@ -1,0 +1,24 @@
+@startuml sequence-informasi-promo
+skinparam sequenceArrowThickness 1.5
+skinparam sequenceParticipantBackgroundColor #dae8fc
+skinparam sequenceParticipantBorderColor #6c8ebf
+
+actor Customer
+participant "Browser" as B
+participant "Next.js Page\n/promo" as P
+participant "API Route\n/api/promos" as A
+participant "Prisma ORM" as PR
+database "MySQL DB" as DB
+
+Customer -> B: Buka halaman promo
+B -> P: GET /promo
+P -> A: fetch(/api/promos)
+A -> PR: promo.findMany()
+PR -> DB: SELECT * FROM Promo
+DB --> PR: data promo
+PR --> A: List<Promo>
+A --> P: JSON response
+P --> B: Render halaman promo
+B --> Customer: Tampilkan daftar promo aktif
+
+@enduml

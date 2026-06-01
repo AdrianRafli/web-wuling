@@ -1,0 +1,27 @@
+@startuml sequence-layanan-service
+skinparam sequenceArrowThickness 1.5
+skinparam sequenceParticipantBackgroundColor #dae8fc
+skinparam sequenceParticipantBorderColor #6c8ebf
+
+actor Customer
+participant "Browser" as B
+participant "Next.js Page\n/faq" as P
+participant "API Route\n/api/faqs" as A
+participant "Prisma ORM" as PR
+database "MySQL DB" as DB
+
+Customer -> B: Buka halaman FAQ
+B -> P: GET /faq
+P -> A: fetch(/api/faqs)
+A -> PR: faq.findMany()
+PR -> DB: SELECT * FROM FAQ
+DB --> PR: data FAQ
+PR --> A: List<FAQ>
+A --> P: JSON response
+P --> B: Render halaman FAQ
+B --> Customer: Tampilkan daftar pertanyaan
+
+Customer -> B: Klik salah satu pertanyaan
+B --> Customer: Tampilkan jawaban (accordion)
+
+@enduml

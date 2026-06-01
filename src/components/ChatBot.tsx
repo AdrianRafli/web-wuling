@@ -121,19 +121,18 @@ function getReply(input: string): Message {
   for (const rule of RULES) {
     if (rule.keywords.some((kw) => lower.includes(kw))) {
       return {
-        id: Date.now(),
+        id: 0, // will be overwritten by idCounter
         from: "bot",
         text: rule.answer,
         options: rule.options,
       };
     }
   }
-  return { ...FALLBACK, id: Date.now() };
+  return { ...FALLBACK };
 }
 
 // ─── Bubble ───────────────────────────────────────────────────────────────────
 function formatText(text: string) {
-  // bold **...**
   return text.split("\n").map((line, i) => {
     const parts = line.split(/\*\*(.*?)\*\*/g);
     return (
@@ -150,6 +149,7 @@ function formatText(text: string) {
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function ChatBot() {
   const [open, setOpen] = useState(false);
+  const [visible, setVisible] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
@@ -166,10 +166,20 @@ export default function ChatBot() {
   const idCounter = useRef(2);
   const openRef = useRef(open);
 
+  // Sync openRef dengan state open
   useEffect(() => {
     openRef.current = open;
   }, [open]);
 
+  // Scroll visibility — identik dengan WhatsAppButton
+  useEffect(() => {
+    const handleScroll = () => setVisible(window.scrollY > 100);
+    window.addEventListener("scroll", handleScroll);
+    handleScroll(); // cek posisi awal
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Auto-scroll ke pesan terbaru
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, typing]);
@@ -205,8 +215,8 @@ export default function ChatBot() {
     <>
       {/* ── Chat Window ── */}
       <div
-        className={`fixed bottom-[5.5rem] right-6 z-40 flex flex-col transition-all duration-300 ease-in-out ${
-          open
+        className={`fixed bottom-[5.5rem] right-6 z-40 flex flex-col transition-all duration-500 ${
+          open && visible
             ? "opacity-100 translate-y-0 pointer-events-auto"
             : "opacity-0 translate-y-4 pointer-events-none"
         }`}
@@ -234,9 +244,15 @@ export default function ChatBot() {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto bg-gray-50 px-3 py-3 space-y-3" style={{ maxHeight: "360px", minHeight: "200px" }}>
+        <div
+          className="flex-1 overflow-y-auto bg-gray-50 px-3 py-3 space-y-3"
+          style={{ maxHeight: "360px", minHeight: "200px" }}
+        >
           {messages.map((msg) => (
-            <div key={msg.id} className={`flex flex-col ${msg.from === "user" ? "items-end" : "items-start"}`}>
+            <div
+              key={msg.id}
+              className={`flex flex-col ${msg.from === "user" ? "items-end" : "items-start"}`}
+            >
               <div
                 className={`px-3 py-2 rounded-2xl text-sm max-w-[85%] leading-relaxed whitespace-pre-line ${
                   msg.from === "user"
@@ -251,6 +267,7 @@ export default function ChatBot() {
               >
                 {formatText(msg.text)}
               </div>
+
               {/* Quick reply buttons */}
               {msg.from === "bot" && msg.options && (
                 <div className="flex flex-wrap gap-1.5 mt-2 max-w-[90%]">
@@ -324,18 +341,30 @@ export default function ChatBot() {
       {/* ── Toggle Button ── */}
       <button
         onClick={handleToggle}
-        className="fixed bottom-[5.5rem] right-6 z-40 w-13 h-13 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95"
+        className={`fixed bottom-[5.5rem] right-6 z-40 rounded-full shadow-lg flex items-center justify-center transition-all duration-500 hover:scale-110 active:scale-95 ${
+          visible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-4 pointer-events-none"
+        }`}
         style={{
-          background: open ? "var(--color-primary, #c00)" : "var(--color-primary, #c00)",
+          background: "var(--color-primary, #c00)",
           width: "3.25rem",
           height: "3.25rem",
         }}
         aria-label={open ? "Tutup chat" : "Buka chat"}
       >
-        <div className={`transition-all duration-300 ${open ? "rotate-90 opacity-0 absolute" : "rotate-0 opacity-100"}`}>
+        <div
+          className={`transition-all duration-300 ${
+            open ? "rotate-90 opacity-0 absolute" : "rotate-0 opacity-100"
+          }`}
+        >
           <MessageCircle size={22} className="text-white" />
         </div>
-        <div className={`transition-all duration-300 ${open ? "rotate-0 opacity-100" : "-rotate-90 opacity-0 absolute"}`}>
+        <div
+          className={`transition-all duration-300 ${
+            open ? "rotate-0 opacity-100" : "-rotate-90 opacity-0 absolute"
+          }`}
+        >
           <X size={22} className="text-white" />
         </div>
 

@@ -1,0 +1,111 @@
+@startuml ClassDiagram
+skinparam classBackgroundColor #dae8fc
+skinparam classBorderColor #6c8ebf
+skinparam arrowColor #333333
+skinparam classAttributeIconSize 0
+skinparam fontSize 11
+
+class Dealer {
+  +id: Int
+  +name: String
+  +address: String
+  +city: String
+  +phone: String
+  +whatsapp: String
+  +email: String
+  +lat: Float
+  +lng: Float
+  +createdAt: DateTime
+  +updatedAt: DateTime
+}
+
+class DealerHours {
+  +id: Int
+  +weekday: String
+  +saturday: String
+  +sunday: String
+  +dealerId: Int
+}
+
+class Car {
+  +id: Int
+  +slug: String
+  +name: String
+  +tagline: String
+  +category: String
+  +thumbnail: String
+  +isNew: Boolean
+  +isElectric: Boolean
+  +createdAt: DateTime
+  +updatedAt: DateTime
+}
+
+class CarImage {
+  +id: Int
+  +url: String
+  +alt: String
+  +type: String
+  +order: Int
+  +carId: Int
+}
+
+class CarHighlight {
+  +id: Int
+  +text: String
+  +order: Int
+  +carId: Int
+}
+
+class CarVariant {
+  +id: Int
+  +name: String
+  +price: BigInt
+  +transmission: String
+  +order: Int
+  +carId: Int
+}
+
+class CarVariantSpec {
+  +id: Int
+  +engine: String
+  +transmission: String
+  +power: String
+  +torque: String
+  +fuelType: String
+  +seats: Int
+  +drivetrain: String
+  +dimLength: Int
+  +dimWidth: Int
+  +dimHeight: Int
+  +dimWheelbase: Int
+  +batteryCapacity: String
+  +batteryType: String
+  +rangeElectric: String
+  +rangeHybrid: String
+  +chargingAc: String
+  +chargingDc: String
+  +features: Json
+  +variantId: Int
+}
+
+class Lead {
+  +id: Int
+  +name: String
+  +phone: String
+  +email: String
+  +carInterest: String
+  +type: String
+  +preferredDate: String
+  +message: String
+  +status: String
+  +createdAt: DateTime
+}
+
+' Relasi
+Dealer "1" -- "0..1" DealerHours : has
+Car "1" -- "0..*" CarImage : has
+Car "1" -- "0..*" CarHighlight : has
+Car "1" -- "0..*" CarVariant : has
+CarVariant "1" -- "0..1" CarVariantSpec : has
+
+@enduml

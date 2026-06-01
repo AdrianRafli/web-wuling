@@ -1,0 +1,35 @@
+@startuml sequence-katalog-kendaraan
+skinparam sequenceArrowThickness 1.5
+skinparam sequenceParticipantBackgroundColor #dae8fc
+skinparam sequenceParticipantBorderColor #6c8ebf
+
+actor Customer
+participant "Browser" as B
+participant "Next.js Page\n/katalog" as P
+participant "API Route\n/api/cars" as A
+participant "Prisma ORM" as PR
+database "MySQL DB" as DB
+
+Customer -> B: Buka halaman katalog
+B -> P: GET /katalog
+P -> A: fetch(/api/cars)
+A -> PR: car.findMany()
+PR -> DB: SELECT * FROM Car
+DB --> PR: data kendaraan
+PR --> A: List<Car>
+A --> P: JSON response
+P --> B: Render halaman katalog
+B --> Customer: Tampilkan daftar kendaraan
+
+Customer -> B: Klik salah satu kendaraan
+B -> P: GET /katalog/[slug]
+P -> A: fetch(/api/cars/[slug])
+A -> PR: car.findUnique({slug})
+PR -> DB: SELECT Car + CarVariant\n+ CarImage + CarHighlight
+DB --> PR: data detail kendaraan
+PR --> A: Car + relasi
+A --> P: JSON response
+P --> B: Render halaman detail
+B --> Customer: Tampilkan spesifikasi & harga OTR
+
+@enduml

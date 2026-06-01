@@ -1,0 +1,40 @@
+@startuml sequence-chatbot
+skinparam sequenceArrowThickness 1.5
+skinparam sequenceParticipantBackgroundColor #dae8fc
+skinparam sequenceParticipantBorderColor #6c8ebf
+
+actor Customer
+participant "Browser" as B
+participant "Next.js Page" as P
+participant "Chatbot Engine\n(Rule-Based)" as CE
+participant "API Route\n/api/chat" as A
+participant "Prisma ORM" as PR
+database "MySQL DB" as DB
+
+Customer -> B: Membuka widget chatbot
+B -> P: Render ChatWidget component
+P --> B: Tampilkan UI chatbot
+B --> Customer: Chatbot siap digunakan
+
+Customer -> B: Mengetik pesan
+B -> P: onSubmit(message)
+P -> CE: processMessage(message)
+CE -> CE: Deteksi keyword\ndari pesan
+
+alt Keyword dikenali
+  CE -> A: fetch(/api/chat)
+  A -> PR: faq.findMany() / data statis
+  PR -> DB: SELECT relevan data
+  DB --> PR: data
+  PR --> A: hasil query
+  A --> CE: JSON response
+  CE --> P: respons sesuai keyword
+  P --> B: Render pesan balasan
+  B --> Customer: Tampilkan respons chatbot
+else Keyword tidak dikenali
+  CE --> P: pesan fallback
+  P --> B: Render pesan fallback
+  B --> Customer: "Silakan hubungi sales kami"
+end
+
+@enduml
