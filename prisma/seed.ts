@@ -16,6 +16,7 @@ async function main() {
   await prisma.carHighlight.deleteMany();
   await prisma.carImage.deleteMany();
   await prisma.car.deleteMany();
+  await prisma.event.deleteMany();
   console.log("🗑️  Data lama dihapus.\n");
 
   // ============================================================
@@ -1175,6 +1176,51 @@ async function main() {
     },
   });
   console.log("  ✓ Formo Max (2 varian)");
+
+  await prisma.event.createMany({
+  data: [
+    {
+      title: "Wuling Auto Show Semarang 2025",
+      description:
+        "Pameran otomotif terbesar di Semarang! Temukan semua model terbaru Wuling, promo eksklusif pameran, hadiah menarik, dan kesempatan test drive langsung di lokasi. Dapatkan penawaran DP spesial yang hanya tersedia selama pameran berlangsung.",
+      location: "Java Supermall Semarang",
+      address: "Jl. MT. Haryono No.992-994, Wonodri, Semarang",
+      startDate: new Date("2025-07-15T09:00:00+07:00"),
+      endDate: new Date("2025-07-20T21:00:00+07:00"),
+      isActive: true,
+    },
+    {
+      title: "Grand Launching BinguoEV Semarang",
+      description:
+        "Saksikan peluncuran resmi BinguoEV di Semarang! Hadir dan jadilah yang pertama merasakan city car listrik terkini dari Wuling. Ada demo charging, sesi tanya jawab bersama teknisi, serta penawaran indent eksklusif dengan harga perdana.",
+      location: "Wuling Showroom Semarang",
+      address: "Jl. Raya Kaligawe No.7, Semarang",
+      startDate: new Date("2025-08-02T10:00:00+07:00"),
+      endDate: new Date("2025-08-02T17:00:00+07:00"),
+      isActive: true,
+    },
+    {
+      title: "Wuling Family Gathering & Test Drive",
+      description:
+        "Acara keluarga seru bersama komunitas pemilik Wuling Semarang! Nikmati test drive Almaz RS & Air ev terbaru, games berhadiah, photo booth, serta konsultasi gratis perawatan kendaraan bersama teknisi resmi Wuling.",
+      location: "Lapangan Parkir DP Mall Semarang",
+      address: "Jl. Imam Bonjol No.153, Pendrikan Kidul, Semarang",
+      startDate: new Date("2025-09-06T08:00:00+07:00"),
+      endDate: new Date("2025-09-06T15:00:00+07:00"),
+      isActive: true,
+    },
+    {
+      title: "GIIAS Semarang 2025",
+      description:
+        "Wuling hadir di Gaikindo Indonesia International Auto Show Semarang 2025! Booth eksklusif Wuling menampilkan seluruh lineup terbaru termasuk model konsep. Nikmati promo spesial GIIAS, cicilan 0%, dan berbagai hadiah langsung.",
+      location: "Semarang Convention Center",
+      address: "Jl. dr. Sutomo No.1, Mugassari, Semarang",
+      startDate: new Date("2025-10-10T10:00:00+07:00"),
+      endDate: new Date("2025-10-14T21:00:00+07:00"),
+      isActive: true,
+    },
+  ],
+});
 
   // ============================================================
   // RINGKASAN
