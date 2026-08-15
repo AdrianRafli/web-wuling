@@ -10,6 +10,7 @@ import SpecTabs from "@/components/sections/SpecTabs";
 import CarImage from "@/components/ui/CarImage";
 
 export const revalidate = 3600;
+export const dynamicParams = true;
 
 // ============================================================
 // Types — sesuai response /api/cars/[slug]
@@ -120,10 +121,8 @@ async function getCar(slug: string): Promise<CarDetail | null> {
   } as CarDetail;
 }
 
-// generateStaticParams — pre-render semua halaman detail saat build
 export async function generateStaticParams() {
-  const cars = await prisma.car.findMany({ select: { slug: true } });
-  return cars.map((car) => ({ slug: car.slug }));
+  return [];
 }
 
 export async function generateMetadata({
