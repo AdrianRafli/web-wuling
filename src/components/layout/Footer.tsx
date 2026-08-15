@@ -24,7 +24,7 @@ const carLinks = [
 export default async function Footer() {
   const dealer = await prisma.dealer.findFirst({
     include: { hours: true },
-  });
+  }).catch(() => null);
 
   const name     = dealer?.name     ?? "Wuling Motors Semarang";
   const city     = dealer?.city     ?? "Semarang, Jawa Tengah";

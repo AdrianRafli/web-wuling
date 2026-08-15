@@ -32,7 +32,7 @@ export default async function RootLayout({
   // Fetch dealer sekali di root layout — dipakai Navbar & WhatsAppButton
   const dealer = await prisma.dealer.findFirst({
     select: { city: true, phone: true, whatsapp: true },
-  });
+  }).catch(() => null);
 
   const city     = dealer?.city     ?? "Semarang, Jawa Tengah";
   const phone    = dealer?.phone    ?? "628133399568";
